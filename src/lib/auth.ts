@@ -98,7 +98,7 @@ export const signIn: (email: string, password: string) => AsyncDoneOrError = asy
   return [getStoreValue(authState).isSignedIn, null]
 }
 
-export const signout = async () => {
+export const signout: () => AsyncDoneOrError = async () => {
   const currentAuthState = getStoreValue(authState)
   if (!currentAuthState.isSignedIn) {
     return [null, "not signed in"]
@@ -115,7 +115,27 @@ export const signout = async () => {
   if (error) {
     return [null, error]
   }
-
+   
   setTokens({ refresh_token: null, token: null })
   return [res.data.success, null]
 }
+
+export const signup: (email: string, password: string) => AsyncDoneOrError = async (email, password) => {
+  const currentAuthState = getStoreValue(authState)
+  if (currentAuthState.isSignedIn) {
+    return [null, "already signed in"]
+  }
+
+  const [res, error] = await fetchOrError({
+    endpointName: "users/signup",
+    method: "POST",
+    body: {user: {email, password}},
+  })
+
+  if (error) {
+    return [null, error]
+  }
+
+  setTokens(res.data)
+  return [getStoreValue(authState).isSignedIn, null]
+} 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { refreshAccessToken, signIn, authState, signout } from "$lib/auth";
+  import { refreshAccessToken, signIn, authState, signout, signup } from "$lib/auth";
   import { onMount } from "svelte";
 
   let email = "";
@@ -11,10 +11,16 @@
     loading = false
   });
 
+  const resetInputs = () => {
+    email = "";
+    password = "";
+  }
+
   const handleSubmit = async () => {
     loading = true
     await signIn(email, password);
     loading = false
+    resetInputs()
   };
 
   const handleRefresh = async () => {
@@ -28,6 +34,13 @@
     await signout();
     loading = false
   };
+
+  const handleSignup = async () => {
+    loading = true
+    await signup(email, password)
+    loading = false
+    resetInputs()
+  }
 </script>
 
 <template>
@@ -54,7 +67,8 @@
         name="password"
         id="password"
         bind:value="{password}" />
-        <button type="submit">sign in</button>
+      <button type="submit">sign in</button>
+      <button on:click="{handleSignup}" type="button">sign up</button>
     </form>
     {/if}
   </div>
