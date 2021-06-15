@@ -152,3 +152,11 @@ export const signup: (email: string, password: string) => AsyncDoneOrError = asy
   setTokens(res.data)
   return [getStoreValue(authState).isSignedIn, null]
 } 
+
+export const getAuthorizationHeader: () => string | null = () => {
+  const { accessToken, isSignedIn } = getStoreValue(authState)
+  if (isSignedIn) {
+    return `Bearer ${accessToken}`
+  }
+  return null
+}
