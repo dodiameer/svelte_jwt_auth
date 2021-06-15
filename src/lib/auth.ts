@@ -1,6 +1,7 @@
 import { endpoint, REFRESH_TOKEN_KEY } from "./consts"
 import { writable, get as getStoreValue } from "svelte/store"
-import {browser} from "$app/env"
+import { browser } from "$app/env"
+import { betterFetch, FetchOptions, FetchResponse } from "./utils"
 
 export const authState = writable({
   accessToken: "",
@@ -36,41 +37,12 @@ function setTokens({refresh_token = null, token = null, ...meta}) {
   })
 }
 
-type DoneOrError<T = any> = [T | null, string | null]
-type AsyncDoneOrError<T = any> = Promise<DoneOrError<T>>
-
-const fetchOrError = async ({endpointName, body = {}, method = "GET"}) => {
-  const res = await fetch(endpoint(endpointName), {
-    method,
-    body: method !== "GET" ? JSON.stringify(body) : null,
-    headers: Object.entries({"Content-Type": "application/json"})
-  })
-
-  if (!res.ok) {
-    console.log({ failedRefreshResponse: res })
-    return [null, "response not ok"]
-  }
-
-  const data = await res.json()
-
-  if (data.error) {
-    return [null, data.error]
-  }
-
-  return [data, null]
+// type DoneOrError<T = any> = [T | null, string | null]
+// type AsyncDoneOrError<T = any> = Promise<DoneOrError<T>>
+type AsyncDoneOrError<T = any> = FetchResponse<T>
+const fetchOrError = async <Body = any>({endpointName, body, method = "GET"}: FetchOptions<Body>) => {
+  return betterFetch({endpointName, body, method})
 }
-
-/*
-? The API response for all the functions below looks like this
-
-{
-  "data": {
-    "token": "<Access JWT>",
-    "refresh_token": "<Refresh JWT>",
-    ...metadata (user's email, username, etc)
-  }
-}
-*/
 
 export const refreshAccessToken: () => AsyncDoneOrError = async () => {
   const currentRefreshToken = getStoreValue(authState).refreshToken
@@ -130,7 +102,7 @@ export const signout: () => AsyncDoneOrError = async () => {
   }
    
   setTokens({ refresh_token: null, token: null })
-  return [res.data.success, null]
+  return [res.success, null]
 }
 
 export const signup: (email: string, password: string) => AsyncDoneOrError = async (email, password) => {
@@ -153,10 +125,3 @@ export const signup: (email: string, password: string) => AsyncDoneOrError = asy
   return [getStoreValue(authState).isSignedIn, null]
 } 
 
-export const getAuthorizationHeader: () => string | null = () => {
-  const { accessToken, isSignedIn } = getStoreValue(authState)
-  if (isSignedIn) {
-    return `Bearer ${accessToken}`
-  }
-  return null
-}
