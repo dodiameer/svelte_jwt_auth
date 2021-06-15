@@ -1,6 +1,7 @@
-import { endpoint, REFRESH_TOKEN_KEY } from "./consts"
+import { REFRESH_TOKEN_KEY } from "./consts"
 import { writable, get as getStoreValue } from "svelte/store"
-import {browser} from "$app/env"
+import { browser } from "$app/env"
+import { betterFetch, FetchResponse } from "./utils"
 
 export const authState = writable({
   accessToken: "",
@@ -36,49 +37,14 @@ function setTokens({refresh_token = null, token = null, ...meta}) {
   })
 }
 
-type DoneOrError<T = any> = [T | null, string | null]
-type AsyncDoneOrError<T = any> = Promise<DoneOrError<T>>
 
-const fetchOrError = async ({endpointName, body = {}, method = "GET"}) => {
-  const res = await fetch(endpoint(endpointName), {
-    method,
-    body: method !== "GET" ? JSON.stringify(body) : null,
-    headers: Object.entries({"Content-Type": "application/json"})
-  })
-
-  if (!res.ok) {
-    console.log({ failedRefreshResponse: res })
-    return [null, "response not ok"]
-  }
-
-  const data = await res.json()
-
-  if (data.error) {
-    return [null, data.error]
-  }
-
-  return [data, null]
-}
-
-/*
-? The API response for all the functions below looks like this
-
-{
-  "data": {
-    "token": "<Access JWT>",
-    "refresh_token": "<Refresh JWT>",
-    ...metadata (user's email, username, etc)
-  }
-}
-*/
-
-export const refreshAccessToken: () => AsyncDoneOrError = async () => {
+export const refreshAccessToken: () => FetchResponse = async () => {
   const currentRefreshToken = getStoreValue(authState).refreshToken
   if (!currentRefreshToken) {
     return [null, "not logged in"]
   }
 
-  const [res, error] = await fetchOrError({ 
+  const [res, error] = await betterFetch({ 
     endpointName: "users/refresh", 
     body: {refresh_token: currentRefreshToken},
     method: "POST" 
@@ -88,16 +54,16 @@ export const refreshAccessToken: () => AsyncDoneOrError = async () => {
     return [null, error]
   }
   
-  setTokens(res.data)
+  setTokens(res)
   return [getStoreValue(authState).accessToken, null]
 }
 
-export const signIn: (email: string, password: string) => AsyncDoneOrError = async (email, password) => {
+export const signIn: (email: string, password: string) => FetchResponse = async (email, password) => {
   if (getStoreValue(authState).isSignedIn) {
     return [null, "already logged in"]
   }
 
-  const [res, error] = await fetchOrError({
+  const [res, error] = await betterFetch({
     endpointName: "users/signin",
     method: "POST",
     body: {email, password}
@@ -107,17 +73,17 @@ export const signIn: (email: string, password: string) => AsyncDoneOrError = asy
     return [null, error]
   }
 
-  setTokens(res.data)
+  setTokens(res)
   return [getStoreValue(authState).isSignedIn, null]
 }
 
-export const signout: () => AsyncDoneOrError = async () => {
+export const signout: () => FetchResponse = async () => {
   const currentAuthState = getStoreValue(authState)
   if (!currentAuthState.isSignedIn) {
     return [null, "not signed in"]
   }
 
-  const [res, error] = await fetchOrError({
+  const [res, error] = await betterFetch({
     endpointName: "users/signout",
     method: "POST",
     body: {
@@ -130,16 +96,16 @@ export const signout: () => AsyncDoneOrError = async () => {
   }
    
   setTokens({ refresh_token: null, token: null })
-  return [res.data.success, null]
+  return [res.success, null]
 }
 
-export const signup: (email: string, password: string) => AsyncDoneOrError = async (email, password) => {
+export const signup: (email: string, password: string) => FetchResponse = async (email, password) => {
   const currentAuthState = getStoreValue(authState)
   if (currentAuthState.isSignedIn) {
     return [null, "already signed in"]
   }
 
-  const [res, error] = await fetchOrError({
+  const [res, error] = await betterFetch({
     endpointName: "users/signup",
     method: "POST",
     body: {user: {email, password}},
@@ -149,14 +115,7 @@ export const signup: (email: string, password: string) => AsyncDoneOrError = asy
     return [null, error]
   }
 
-  setTokens(res.data)
+  setTokens(res)
   return [getStoreValue(authState).isSignedIn, null]
 } 
 
-export const getAuthorizationHeader: () => string | null = () => {
-  const { accessToken, isSignedIn } = getStoreValue(authState)
-  if (isSignedIn) {
-    return `Bearer ${accessToken}`
-  }
-  return null
-}
