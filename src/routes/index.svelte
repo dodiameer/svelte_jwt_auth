@@ -5,9 +5,12 @@
   let email = "";
   let password = "";
   let loading = true;
+  let componentError = null
 
   onMount(async () => {
-    await refreshAccessToken();
+    componentError = null
+    const [_, error] = await refreshAccessToken();
+    error && (componentError = error)
     loading = false
   });
 
@@ -18,26 +21,34 @@
 
   const handleSubmit = async () => {
     loading = true
-    await signIn(email, password);
+    componentError = null
+    const [_, error] = await signIn(email, password);
+    error && (componentError = error)
     loading = false
     resetInputs()
   };
 
   const handleRefresh = async () => {
     loading = true
-    await refreshAccessToken();
+    componentError = null
+    const [_, error] = await refreshAccessToken();
+    error && (componentError = error)
     loading = false
   };
 
   const handleSignout = async () => {
     loading = true
-    await signout();
+    componentError = null
+    const [_, error] = await signout();
+    error && (componentError = error)
     loading = false
   };
 
   const handleSignup = async () => {
     loading = true
-    await signup(email, password)
+    componentError = null
+    const [_, error] = await signup(email, password)
+    error && (componentError = error)
     loading = false
     resetInputs()
   }
@@ -45,6 +56,9 @@
 
 <template>
   <div class="container">
+    {#if componentError}
+    <p>error: {typeof componentError === "string" ? componentError : componentError.message}</p>
+    {/if}
     {#if loading}
     <p>Loading...</p>
     {:else if $authState.isSignedIn}
