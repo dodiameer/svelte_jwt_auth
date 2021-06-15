@@ -54,7 +54,7 @@ export const refreshAccessToken: () => FetchResponse = async () => {
     return [null, error]
   }
   
-  setTokens(res.data)
+  setTokens(res)
   return [getStoreValue(authState).accessToken, null]
 }
 
@@ -73,7 +73,7 @@ export const signIn: (email: string, password: string) => FetchResponse = async 
     return [null, error]
   }
 
-  setTokens(res.data)
+  setTokens(res)
   return [getStoreValue(authState).isSignedIn, null]
 }
 
@@ -115,7 +115,7 @@ export const signup: (email: string, password: string) => FetchResponse = async 
     return [null, error]
   }
 
-  setTokens(res.data)
+  setTokens(res)
   return [getStoreValue(authState).isSignedIn, null]
 } 
 

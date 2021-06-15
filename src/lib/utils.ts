@@ -28,8 +28,8 @@ export async function betterFetch<RequestBody = any, ResponseBody = any>(options
     endpointName, 
     body = null, 
     method = "GET",
-    dataKey = null,
-    errorKey = null,
+    dataKey = "data",
+    errorKey = "error",
     fetchMethod = fetch,
     headers = {},
     authorize = true
@@ -59,5 +59,5 @@ export async function betterFetch<RequestBody = any, ResponseBody = any>(options
     return [null, data[errorKey]]
   }
 
-  return [dataKey ? data[dataKey] : data, null]
+  return [(dataKey && errorKey) ? data[dataKey] : data, null]
 }
