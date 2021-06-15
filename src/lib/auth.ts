@@ -29,9 +29,9 @@ function setTokens({refresh_token = null, token = null, ...meta}) {
       localStorage.setItem(REFRESH_TOKEN_KEY, null)
       newState.refreshToken = ""
     }
-
+    
     newState.meta = meta
-
+    
     return newState
   })
 }
@@ -52,12 +52,25 @@ const fetchOrError = async ({endpointName, body = {}, method = "GET"}) => {
   }
 
   const data = await res.json()
+
   if (data.error) {
     return [null, data.error]
   }
 
   return [data, null]
 }
+
+/*
+? The API response for all the functions below looks like this
+
+{
+  "data": {
+    "token": "<Access JWT>",
+    "refresh_token": "<Refresh JWT>",
+    ...metadata (user's email, username, etc)
+  }
+}
+*/
 
 export const refreshAccessToken: () => AsyncDoneOrError = async () => {
   const currentRefreshToken = getStoreValue(authState).refreshToken
